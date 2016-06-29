@@ -1,0 +1,62 @@
+version: '2'
+
+services:
+
+  nginx:
+      image: nginx:latest
+      ports:
+          - 8000:80
+      links:
+          - php
+      volumes_from:
+          - app
+      volumes:
+        - ./nginx/www.conf:/etc/nginx/conf.d/www.conf
+        - ./nginx/api.conf:/etc/nginx/conf.d/api.conf
+        - ./nginx/adm.conf:/etc/nginx/conf.d/adm.conf
+
+  php:
+      build: ./php/
+      expose:
+          - 9000
+      links:
+          - mysql
+          - redis
+      volumes_from:
+          - app
+      environment:
+          REDIS_PORT: 6379
+          REDIS_HOST: redis
+  app:
+      image: php:7.0.8-fpm
+      volumes:
+          - ../:/var/www/html
+      command: "true"
+
+  mysql:
+      image: mysql:latest
+      volumes_from:
+          - data
+      environment:
+          MYSQL_ROOT_PASSWORD: secret
+  redis:
+      image: redis
+      expose:
+          - 6379
+      volumes_from:
+          - data
+  data:
+      image: mysql:latest
+      volumes:
+          - /var/lib/mysql
+          - /var/lib/redis:/data
+      command: "true"
+
+  phpmyadmin:
+      image: phpmyadmin/phpmyadmin
+      ports:
+          - 8080:80
+      links:
+          - mysql
+      environment:
+          PMA_HOST: mysql
